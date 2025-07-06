@@ -1,0 +1,4 @@
+.env
+chroma_temp/
+static/uploads/
+__pycache__/
