@@ -1,11 +1,7 @@
 import os
 from flask import Flask, request, render_template, redirect, url_for
 from dotenv import load_dotenv
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
-from langchain.chains import ConversationalRetrievalChain
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from pdf_chain import build_chain
 
 # Load API key
 load_dotenv()
@@ -33,15 +29,7 @@ def index():
             filepath = os.path.join(upload_folder, filename + ".pdf")
             pdf.save(filepath)
 
-            loader = PyPDFLoader(os.path.join("static", "uploads", filename + ".pdf"))
-            pages = loader.load()
-            chunks = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=100).split_documents(pages)
-            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-            db = Chroma.from_documents(chunks, embeddings, persist_directory="./chroma_temp")
-
-            llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0.3)
-            chain = ConversationalRetrievalChain.from_llm(llm, retriever=db.as_retriever(), return_source_documents=False)
-
+            chain = build_chain(filepath)
             chat_history = [("bot", f"File '{filename}' uploaded successfully. Ask me anything.")]
             return redirect(url_for("index"))
 
